@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="cs">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0f172a" />
+    <title>Daily list — Todo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <div class="brand"><span class="brand-mark">✓</span><span>daily list</span></div>
+        <button class="icon-button" id="settingsButton" aria-label="Nastavení">⚙</button>
+        <p class="eyebrow" id="todayLabel"></p>
+        <h1>Udělej si prostor<br /><em>pro důležité.</em></h1>
+        <p class="subtitle">Malé kroky. Čistá hlava. Jeden úkol za druhým.</p>
+      </section>
+
+      <section class="stats" aria-label="Přehled úkolů">
+        <div class="stat-card"><strong id="totalCount">0</strong><span>celkem</span></div>
+        <div class="stat-card"><strong id="doneCount">0</strong><span>hotovo</span></div>
+        <div class="progress-card"><div class="progress-label"><span>Tvůj dnešní postup</span><b id="progressText">0 %</b></div><div class="progress-track"><div class="progress-bar" id="progressBar"></div></div></div>
+      </section>
+
+      <section class="content">
+        <form class="add-form" id="addForm">
+          <input id="taskInput" type="text" maxlength="160" placeholder="Co potřebuješ udělat?" autocomplete="off" required />
+          <button type="submit" class="add-button"><span>+</span> Přidat úkol</button>
+        </form>
+
+        <div class="list-heading"><h2>Moje úkoly</h2><span id="syncStatus" class="sync-status"><i></i> Demo režim</span></div>
+        <div id="taskList" class="task-list"></div>
+        <div id="emptyState" class="empty-state" hidden><div class="empty-icon">✦</div><h3>Čistý stůl</h3><p>Přidej první úkol a pusť se do toho.</p></div>
+      </section>
+
+      <footer><span>Vše na jednom místě.</span><span class="footer-dot">•</span><span id="lastUpdated">Lokálně v prohlížeči</span></footer>
+    </main>
+
+    <dialog id="settingsDialog">
+      <form method="dialog" class="dialog-card" id="settingsForm">
+        <button class="dialog-close" value="cancel" aria-label="Zavřít">×</button>
+        <p class="eyebrow">Propojení</p><h2>Google Tabulky</h2>
+        <p class="dialog-copy">Vlož URL nasazeného Google Apps Scriptu. Bez URL aplikace používá demo režim v tomto prohlížeči.</p>
+        <label for="endpointInput">Web App URL</label>
+        <input id="endpointInput" type="url" placeholder="https://script.google.com/macros/s/…/exec" />
+        <div class="dialog-actions"><button value="cancel" class="secondary-button">Zrušit</button><button value="default" class="add-button">Uložit a načíst</button></div>
+      </form>
+    </dialog>
+    <script src="app.js?v=3"></script>
+  </body>
+</html>
