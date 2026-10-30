@@ -1,8 +1,8 @@
 const STORAGE_KEY = 'daily-list-tasks-v1';
 const ENDPOINT_KEY = 'daily-list-google-endpoint-v1';
-let tasks = loadLocal();
 const DEFAULT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxEhFdm7tOpiHEOPDifEvhsWv32fckiT_1ocSWG7NkL17Iq5rl0cX-7bP-H-mpm3q9R9w/exec';
 let endpoint = localStorage.getItem(ENDPOINT_KEY) || DEFAULT_ENDPOINT;
+let tasks = endpoint ? [] : loadLocal();
 
 const $ = (id) => document.getElementById(id);
 $('todayLabel').textContent = new Intl.DateTimeFormat('cs-CZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
@@ -50,8 +50,9 @@ async function request(method, body) {
 }
 async function sync() {
   if (!endpoint) { setStatus('Demo režim'); $('lastUpdated').textContent = 'Lokálně v prohlížeči'; return; }
+  setStatus('Načítám…');
   try { const data = await request('GET'); if (Array.isArray(data.tasks)) { tasks = data.tasks; saveLocal(); render(); } setStatus('Synchronizováno', true); $('lastUpdated').textContent = `Aktualizováno ${formatTime(new Date().toISOString())}`; }
-  catch { setStatus('Offline — lokální kopie'); }
+  catch { tasks = loadLocal(); render(); setStatus('Offline — lokální kopie'); }
 }
 async function push() {
   saveLocal();
