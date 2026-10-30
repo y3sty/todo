@@ -1,0 +1,68 @@
+const STORAGE_KEY = 'daily-list-tasks-v1';
+const ENDPOINT_KEY = 'daily-list-google-endpoint-v1';
+let tasks = loadLocal();
+const DEFAULT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxEhFdm7tOpiHEOPDifEvhsWv32fckiT_1ocSWG7NkL17Iq5rl0cX-7bP-H-mpm3q9R9w/exec';
+let endpoint = localStorage.getItem(ENDPOINT_KEY) || DEFAULT_ENDPOINT;
+
+const $ = (id) => document.getElementById(id);
+$('todayLabel').textContent = new Intl.DateTimeFormat('cs-CZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
+
+function loadLocal() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { return []; }
+}
+function saveLocal() { localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); }
+function makeId() { return `${Date.now()}-${Math.random().toString(16).slice(2)}`; }
+function escapeHtml(value) { return value.replace(/[&<>'"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#039;','"':'&quot;'}[c])); }
+function formatTime(iso) { return new Intl.DateTimeFormat('cs-CZ', { hour: '2-digit', minute: '2-digit' }).format(new Date(iso)); }
+
+function render() {
+  const completed = tasks.filter((task) => task.done).length;
+  const total = tasks.length;
+  const percent = total ? Math.round((completed / total) * 100) : 0;
+  $('totalCount').textContent = total;
+  $('doneCount').textContent = completed;
+  $('progressText').textContent = `${percent} %`;
+  $('progressBar').style.width = `${percent}%`;
+  $('emptyState').hidden = total !== 0;
+  $('taskList').innerHTML = tasks.map((task) => `<div class="task-row ${task.done ? 'completed' : ''}" data-id="${task.id}">
+    <button class="check" data-action="toggle" aria-label="${task.done ? 'Označit jako nedokončené' : 'Označit jako hotové'}">${task.done ? '✓' : ''}</button>
+    <span class="task-title">${escapeHtml(task.title)}</span><span class="task-time">${formatTime(task.createdAt)}</span>
+    <button class="delete-button" data-action="delete" aria-label="Smazat úkol">×</button></div>`).join('');
+}
+
+function setStatus(text, connected = false) { $('syncStatus').innerHTML = `<i></i> ${text}`; $('syncStatus').classList.toggle('connected', connected); }
+async function request(method, body) {
+  if (!endpoint) return;
+  if (method === 'GET') {
+    return new Promise((resolve, reject) => {
+      const callback = `dailyListCallback_${Date.now()}`;
+      const script = document.createElement('script');
+      const timer = setTimeout(() => { cleanup(); reject(new Error('Načtení trvalo příliš dlouho')); }, 15000);
+      const cleanup = () => { clearTimeout(timer); delete window[callback]; script.remove(); };
+      window[callback] = (data) => { cleanup(); resolve(data); };
+      script.onerror = () => { cleanup(); reject(new Error('Google Apps Script není dostupný')); };
+      script.src = `${endpoint}${endpoint.includes('?') ? '&' : '?'}callback=${callback}&t=${Date.now()}`;
+      document.body.appendChild(script);
+    });
+  }
+  await fetch(endpoint, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) });
+  return { ok: true };
+}
+async function sync() {
+  if (!endpoint) { setStatus('Demo režim'); $('lastUpdated').textContent = 'Lokálně v prohlížeči'; return; }
+  try { const data = await request('GET'); if (Array.isArray(data.tasks)) { tasks = data.tasks; saveLocal(); render(); } setStatus('Synchronizováno', true); $('lastUpdated').textContent = `Aktualizováno ${formatTime(new Date().toISOString())}`; }
+  catch { setStatus('Offline — lokální kopie'); }
+}
+async function push() {
+  saveLocal();
+  if (!endpoint) return sync();
+  try { setStatus('Ukládám…'); await request('POST', { tasks }); setStatus('Synchronizováno', true); $('lastUpdated').textContent = `Aktualizováno ${formatTime(new Date().toISOString())}`; }
+  catch { setStatus('Neuloženo — zkus znovu'); }
+}
+
+$('addForm').addEventListener('submit', async (event) => { event.preventDefault(); const input = $('taskInput'); const title = input.value.trim(); if (!title) return; tasks.unshift({ id: makeId(), title, done: false, createdAt: new Date().toISOString() }); input.value = ''; render(); await push(); });
+$('taskList').addEventListener('click', async (event) => { const action = event.target.dataset.action; if (!action) return; const row = event.target.closest('.task-row'); const index = tasks.findIndex((task) => task.id === row.dataset.id); if (index < 0) return; if (action === 'toggle') tasks[index].done = !tasks[index].done; if (action === 'delete') tasks.splice(index, 1); render(); await push(); });
+$('settingsButton').addEventListener('click', () => { $('endpointInput').value = endpoint; $('settingsDialog').showModal(); });
+$('settingsForm').addEventListener('submit', async (event) => { if (event.submitter?.value !== 'default') return; event.preventDefault(); endpoint = $('endpointInput').value.trim().replace(/\/$/, ''); if (endpoint) localStorage.setItem(ENDPOINT_KEY, endpoint); else localStorage.removeItem(ENDPOINT_KEY); $('settingsDialog').close(); await sync(); });
+
+render(); sync();
