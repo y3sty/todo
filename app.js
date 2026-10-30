@@ -34,7 +34,8 @@ function setStatus(text, connected = false) { $('syncStatus').innerHTML = `<i></
 async function request(method, body) {
   if (!endpoint) return;
   if (method === 'GET') {
-    return new Promise((resolve, reject) => {
+    try {
+      return await new Promise((resolve, reject) => {
       const callback = `dailyListCallback_${Date.now()}`;
       const script = document.createElement('script');
       const timer = setTimeout(() => { cleanup(); reject(new Error('Načtení trvalo příliš dlouho')); }, 15000);
@@ -43,7 +44,12 @@ async function request(method, body) {
       script.onerror = () => { cleanup(); reject(new Error('Google Apps Script není dostupný')); };
       script.src = `${endpoint}${endpoint.includes('?') ? '&' : '?'}callback=${callback}&t=${Date.now()}`;
       document.body.appendChild(script);
-    });
+      });
+    } catch {
+      const response = await fetch(`${endpoint}${endpoint.includes('?') ? '&' : '?'}t=${Date.now()}`, { cache: 'no-store' });
+      if (!response.ok) throw new Error('Načtení selhalo');
+      return response.json();
+    }
   }
   await fetch(endpoint, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) });
   return { ok: true };
