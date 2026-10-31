@@ -1,7 +1,6 @@
 const STORAGE_KEY = 'daily-list-tasks-v1';
-const ENDPOINT_KEY = 'daily-list-google-endpoint-v1';
 const DEFAULT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxEhFdm7tOpiHEOPDifEvhsWv32fckiT_1ocSWG7NkL17Iq5rl0cX-7bP-H-mpm3q9R9w/exec';
-let endpoint = localStorage.getItem(ENDPOINT_KEY) || DEFAULT_ENDPOINT;
+const endpoint = DEFAULT_ENDPOINT;
 let tasks = endpoint ? [] : loadLocal();
 
 const $ = (id) => document.getElementById(id);
@@ -69,7 +68,4 @@ async function push(change) {
 
 $('addForm').addEventListener('submit', async (event) => { event.preventDefault(); const input = $('taskInput'); const title = input.value.trim(); if (!title) return; const task = { id: makeId(), title, done: false, createdAt: new Date().toISOString() }; tasks.unshift(task); input.value = ''; render(); await push({ action: 'upsert', task }); });
 $('taskList').addEventListener('click', async (event) => { const action = event.target.dataset.action; if (!action) return; const row = event.target.closest('.task-row'); const index = tasks.findIndex((task) => task.id === row.dataset.id); if (index < 0) return; if (action === 'toggle') { tasks[index].done = !tasks[index].done; render(); await push({ action: 'upsert', task: tasks[index] }); } if (action === 'delete') { const id = tasks[index].id; tasks.splice(index, 1); render(); await push({ action: 'delete', id }); } });
-$('settingsButton').addEventListener('click', () => { $('endpointInput').value = endpoint; $('settingsDialog').showModal(); });
-$('settingsForm').addEventListener('submit', async (event) => { if (event.submitter?.value !== 'default') return; event.preventDefault(); endpoint = $('endpointInput').value.trim().replace(/\/$/, ''); if (endpoint) localStorage.setItem(ENDPOINT_KEY, endpoint); else localStorage.removeItem(ENDPOINT_KEY); $('settingsDialog').close(); await sync(); });
-
 render(); sync();
