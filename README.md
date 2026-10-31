@@ -9,9 +9,8 @@ Otevři `index.html` v prohlížeči. Pro lokální server můžeš použít nap
 1. Vytvoř Google Tabulku.
 2. V menu otevři **Rozšíření → Apps Script** a vlož obsah `google-apps-script/Code.gs`.
 3. Klikni **Nasadit → Nové nasazení**, vyber typ **Webová aplikace**, nastav spuštění jako **já** a přístup na **Kdokoli**.
-4. Zkopíruj URL nasazení.
-5. V aplikaci otevři ozubené kolečko a URL vlož do nastavení.
+4. Zkopíruj URL nasazení a nastav ji jako `DEFAULT_ENDPOINT` v `app.js`, pokud používáš vlastní Apps Script.
 
 Tabulka se vytvoří automaticky na listu `Úkoly` se sloupci `id`, `title`, `done`, `createdAt`. Aplikace při změně odešle celý seznam, takže změny zůstávají synchronizované mezi zařízeními.
 
-Poznámka: Nastavení „Kdokoli“ znamená, že každý, kdo zná URL webové aplikace, může seznam upravit. Pro osobní použití URL nesdílej veřejně.
+Poznámka: Nastavení „Kdokoli“ znamená, že každý, kdo zná URL webové aplikace, může seznam upravit. Pro osobní použití URL nesdílej veřejně. Aplikace má endpoint nastavený interně, takže uživatelé ho neupravují v rozhraní.
