@@ -1,44 +1,77 @@
 <!doctype html>
-<html lang="cs">
+<html lang="cs" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0f172a" />
+    <meta name="theme-color" content="#fffdf4" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#191325" media="(prefers-color-scheme: dark)" />
     <title>Daily list — Todo</title>
+    <script>
+      /* Nastaví motiv ještě před vykreslením, aby neblikl špatný režim. */
+      (function () {
+        try {
+          var saved = localStorage.getItem('daily-list-theme');
+          var theme = saved || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+          document.documentElement.dataset.theme = theme;
+        } catch (e) {
+          document.documentElement.dataset.theme = 'light';
+        }
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <main class="shell">
+    <div class="wrap">
+      <header class="top">
+        <div class="brand"><b>✓</b><span>DAILY LIST!</span></div>
+        <div class="top-actions">
+          <button id="themeToggle" class="theme-toggle" type="button" aria-label="Přepnout světlý / tmavý režim">
+            <span id="themeLabel">☾ Tmavý režim</span>
+          </button>
+          <span id="syncStatus" class="sync-status"><i></i> Demo režim</span>
+        </div>
+      </header>
+
       <section class="hero">
-        <div class="brand"><span class="brand-mark">✓</span><span>daily list</span></div>
-        <p class="eyebrow" id="todayLabel"></p>
-        <h1>Udělej si prostor<br /><em>pro důležité.</em></h1>
-        <p class="subtitle">Malé kroky. Čistá hlava. Jeden úkol za druhým.</p>
+        <h1>Udělej si prostor <span class="mark">pro důležité.</span></h1>
+        <p class="sub"><span id="todayLabel"></span> · Malé kroky. Čistá hlava. Jeden úkol za druhým.</p>
       </section>
 
       <section class="stats" aria-label="Přehled úkolů">
-        <div class="stat-card"><strong id="totalCount">0</strong><span>celkem</span></div>
-        <div class="stat-card"><strong id="doneCount">0</strong><span>hotovo</span></div>
-        <div class="progress-card"><div class="progress-label"><span>Tvůj dnešní postup</span><b id="progressText">0 %</b></div><div class="progress-track"><div class="progress-bar" id="progressBar"></div></div></div>
+        <div class="stat-box"><strong id="totalCount">0</strong><span>celkem úkolů</span></div>
+        <div class="stat-box"><strong id="doneCount">0</strong><span>hotovo</span></div>
+        <div class="stat-box progress-box">
+          <div class="progress-top"><strong id="progressText">0 %</strong><span>dnešní postup</span></div>
+          <div class="segs" id="progressBar" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <p class="progress-sub" id="progressSub">0 z 0 úkolů — jen tak dál!</p>
+        </div>
       </section>
 
-      <section class="content">
-        <form class="add-form" id="addForm">
-          <input id="taskInput" type="text" maxlength="160" placeholder="Co potřebuješ udělat?" autocomplete="off" required />
-          <button type="submit" class="add-button"><span>+</span> Přidat úkol</button>
-        </form>
+      <form class="add-form" id="addForm">
+        <input id="taskInput" type="text" maxlength="160" placeholder="Co potřebuješ udělat?" autocomplete="off" required />
+        <button type="submit" class="add-button">+ Přidat úkol</button>
+      </form>
 
-        <div class="list-heading"><h2>Moje úkoly</h2><span id="syncStatus" class="sync-status"><i></i> Demo režim</span></div>
-        <div id="taskList" class="task-list"></div>
-        <div id="emptyState" class="empty-state" hidden><div class="empty-icon">✦</div><h3>Čistý stůl</h3><p>Přidej první úkol a pusť se do toho.</p></div>
-      </section>
+      <div class="list-heading">
+        <h2>Moje úkoly</h2>
+        <span id="countBadge" class="count-badge">0 úkolů</span>
+      </div>
+      <div id="taskList" class="task-list"></div>
+      <div id="emptyState" class="empty-state" hidden>
+        <div class="empty-icon">★</div>
+        <h3>Čistý stůl</h3>
+        <p>Přidej první úkol a pusť se do toho.</p>
+      </div>
 
-      <footer><span>Vše na jednom místě.</span><span class="footer-dot">•</span><span id="lastUpdated">Lokálně v prohlížeči</span></footer>
-    </main>
+      <footer class="foot">
+        <span>★ Vše na jednom místě ★</span>
+        <span id="lastUpdated">Lokálně v prohlížeči</span>
+      </footer>
+    </div>
 
-    <script src="app.js?v=7"></script>
+    <script src="app.js?v=8"></script>
   </body>
 </html>

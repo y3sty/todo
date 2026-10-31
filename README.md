@@ -14,3 +14,11 @@ Otevři `index.html` v prohlížeči. Pro lokální server můžeš použít nap
 Tabulka se vytvoří automaticky na listu `Úkoly` se sloupci `id`, `title`, `done`, `createdAt`. Aplikace při změně odešle celý seznam, takže změny zůstávají synchronizované mezi zařízeními.
 
 Poznámka: Nastavení „Kdokoli“ znamená, že každý, kdo zná URL webové aplikace, může seznam upravit. Pro osobní použití URL nesdílej veřejně. Aplikace má endpoint nastavený interně, takže uživatelé ho neupravují v rozhraní.
+
+## Vzhled (neo-brutalismus, 31. 10. 2026)
+
+- Nový design: silné kontury, tvrdé offsetové stíny, samolepky a razítka „HOTOVO!“.
+- **Světlý i tmavý režim**: výchozí nastavení se řídí systémem (`prefers-color-scheme`),
+  tlačítkem v horní liště lze režim přepnout ručně; volba se ukládá do `localStorage`
+  pod klíč `daily-list-theme`.
+- Rozložení je responzivní (desktop i mobil), vysazeno písmy Archivo Black + Space Grotesk.
