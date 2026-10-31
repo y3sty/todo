@@ -4,6 +4,7 @@ const endpoint = DEFAULT_ENDPOINT;
 let tasks = endpoint ? [] : loadLocal();
 let isSyncing = false;
 let isSaving = false;
+let hasLoadedOnce = false;
 
 const $ = (id) => document.getElementById(id);
 $('todayLabel').textContent = new Intl.DateTimeFormat('cs-CZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
@@ -59,9 +60,10 @@ async function sync() {
   if (!endpoint) { setStatus('Demo režim'); $('lastUpdated').textContent = 'Lokálně v prohlížeči'; return; }
   if (isSyncing || isSaving) return;
   isSyncing = true;
-  setStatus('Načítám…');
-  try { const data = await request('GET'); if (Array.isArray(data.tasks)) { tasks = data.tasks; saveLocal(); render(); } setStatus('Synchronizováno', true); $('lastUpdated').textContent = `Aktualizováno ${formatTime(new Date().toISOString())}`; }
-  catch { if (!tasks.length) { tasks = loadLocal(); render(); } setStatus('Offline — lokální kopie'); }
+  const firstLoad = !hasLoadedOnce;
+  if (firstLoad) setStatus('Načítám…');
+  try { const data = await request('GET'); if (Array.isArray(data.tasks)) { tasks = data.tasks; saveLocal(); render(); } if (firstLoad) { setStatus('Synchronizováno', true); $('lastUpdated').textContent = `Aktualizováno ${formatTime(new Date().toISOString())}`; } hasLoadedOnce = true; }
+  catch { if (!tasks.length) { tasks = loadLocal(); render(); } if (firstLoad) setStatus('Offline — lokální kopie'); hasLoadedOnce = true; }
   finally { isSyncing = false; }
 }
 async function push(change) {
