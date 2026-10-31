@@ -2,6 +2,8 @@ const STORAGE_KEY = 'daily-list-tasks-v1';
 const DEFAULT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxEhFdm7tOpiHEOPDifEvhsWv32fckiT_1ocSWG7NkL17Iq5rl0cX-7bP-H-mpm3q9R9w/exec';
 const endpoint = DEFAULT_ENDPOINT;
 let tasks = endpoint ? [] : loadLocal();
+let isSyncing = false;
+let isSaving = false;
 
 const $ = (id) => document.getElementById(id);
 $('todayLabel').textContent = new Intl.DateTimeFormat('cs-CZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
@@ -55,17 +57,23 @@ async function request(method, body) {
 }
 async function sync() {
   if (!endpoint) { setStatus('Demo režim'); $('lastUpdated').textContent = 'Lokálně v prohlížeči'; return; }
+  if (isSyncing || isSaving) return;
+  isSyncing = true;
   setStatus('Načítám…');
   try { const data = await request('GET'); if (Array.isArray(data.tasks)) { tasks = data.tasks; saveLocal(); render(); } setStatus('Synchronizováno', true); $('lastUpdated').textContent = `Aktualizováno ${formatTime(new Date().toISOString())}`; }
-  catch { tasks = loadLocal(); render(); setStatus('Offline — lokální kopie'); }
+  catch { if (!tasks.length) { tasks = loadLocal(); render(); } setStatus('Offline — lokální kopie'); }
+  finally { isSyncing = false; }
 }
 async function push(change) {
   saveLocal();
   if (!endpoint) return sync();
+  isSaving = true;
   try { setStatus('Ukládám…'); await request('POST', change || { tasks }); setStatus('Synchronizováno', true); $('lastUpdated').textContent = `Aktualizováno ${formatTime(new Date().toISOString())}`; }
   catch { setStatus('Neuloženo — zkus znovu'); }
+  finally { isSaving = false; }
 }
 
 $('addForm').addEventListener('submit', async (event) => { event.preventDefault(); const input = $('taskInput'); const title = input.value.trim(); if (!title) return; const task = { id: makeId(), title, done: false, createdAt: new Date().toISOString() }; tasks.unshift(task); input.value = ''; render(); await push({ action: 'upsert', task }); });
 $('taskList').addEventListener('click', async (event) => { const action = event.target.dataset.action; if (!action) return; const row = event.target.closest('.task-row'); const index = tasks.findIndex((task) => task.id === row.dataset.id); if (index < 0) return; if (action === 'toggle') { tasks[index].done = !tasks[index].done; render(); await push({ action: 'upsert', task: tasks[index] }); } if (action === 'delete') { const id = tasks[index].id; tasks.splice(index, 1); render(); await push({ action: 'delete', id }); } });
 render(); sync();
+setInterval(sync, 2000);
