@@ -71,8 +71,24 @@ async function request(method, body) {
       return response.json();
     }
   }
-  await fetch(endpoint, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) });
-  return { ok: true };
+  return new Promise((resolve, reject) => {
+    const callback = `dailyListWrite_${Date.now()}`;
+    const script = document.createElement('script');
+    const params = new URLSearchParams({ action: body.action, callback });
+    if (body.action === 'delete') params.set('id', body.id);
+    if (body.action === 'upsert') {
+      params.set('id', body.task.id);
+      params.set('title', body.task.title);
+      params.set('done', String(Boolean(body.task.done)));
+      params.set('createdAt', body.task.createdAt);
+    }
+    const timer = setTimeout(() => { cleanup(); reject(new Error('Uložení trvalo příliš dlouho')); }, 15000);
+    const cleanup = () => { clearTimeout(timer); delete window[callback]; script.remove(); };
+    window[callback] = (data) => { cleanup(); data?.ok ? resolve(data) : reject(new Error(data?.error || 'Uložení selhalo')); };
+    script.onerror = () => { cleanup(); reject(new Error('Google Apps Script není dostupný')); };
+    script.src = `${endpoint}${endpoint.includes('?') ? '&' : '?'}${params.toString()}`;
+    document.body.appendChild(script);
+  });
 }
 async function sync() {
   if (!endpoint) { setStatus('Demo režim'); $('lastUpdated').textContent = 'Lokálně v prohlížeči'; return; }
