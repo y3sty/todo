@@ -67,8 +67,9 @@ async function sync() {
 async function push(change) {
   saveLocal();
   if (!endpoint) return sync();
+  if (!change) return;
   isSaving = true;
-  try { setStatus('Ukládám…'); await request('POST', change || { tasks }); setStatus('Synchronizováno', true); $('lastUpdated').textContent = `Aktualizováno ${formatTime(new Date().toISOString())}`; }
+  try { setStatus('Ukládám…'); await request('POST', change); setStatus('Synchronizováno', true); $('lastUpdated').textContent = `Aktualizováno ${formatTime(new Date().toISOString())}`; }
   catch { setStatus('Neuloženo — zkus znovu'); }
   finally { isSaving = false; }
 }
