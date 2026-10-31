@@ -5,6 +5,7 @@ let tasks = endpoint ? [] : loadLocal();
 let isSyncing = false;
 let isSaving = false;
 let hasLoadedOnce = false;
+const pendingChanges = new Map();
 
 const $ = (id) => document.getElementById(id);
 $('todayLabel').textContent = new Intl.DateTimeFormat('cs-CZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
@@ -33,6 +34,23 @@ function render() {
 }
 
 function setStatus(text, connected = false) { $('syncStatus').innerHTML = `<i></i> ${text}`; $('syncStatus').classList.toggle('connected', connected); }
+function mergePendingChanges(remoteTasks) {
+  const remote = new Map(remoteTasks.map(task => [task.id, task]));
+  const remoteOrder = remoteTasks.map(task => task.id);
+  for (const [id, change] of pendingChanges) {
+    if (change.action === 'upsert') {
+      const remoteTask = remote.get(id);
+      if (remoteTask && JSON.stringify(remoteTask) === JSON.stringify(change.task)) pendingChanges.delete(id);
+      else remote.set(id, change.task);
+    } else if (change.action === 'delete') {
+      if (!remote.has(id)) pendingChanges.delete(id);
+      else remote.delete(id);
+    }
+  }
+  const result = remoteOrder.filter(id => remote.has(id)).map(id => remote.get(id));
+  for (const [id, task] of remote) if (!remoteOrder.includes(id)) result.unshift(task);
+  return result;
+}
 async function request(method, body) {
   if (!endpoint) return;
   if (method === 'GET') {
@@ -62,7 +80,7 @@ async function sync() {
   isSyncing = true;
   const firstLoad = !hasLoadedOnce;
   if (firstLoad) setStatus('Načítám…');
-  try { const data = await request('GET'); if (Array.isArray(data.tasks)) { tasks = data.tasks; saveLocal(); render(); } if (firstLoad) { setStatus('Synchronizováno', true); $('lastUpdated').textContent = `Aktualizováno ${formatTime(new Date().toISOString())}`; } hasLoadedOnce = true; }
+  try { const data = await request('GET'); if (Array.isArray(data.tasks)) { tasks = mergePendingChanges(data.tasks); saveLocal(); render(); } if (firstLoad) { setStatus('Synchronizováno', true); $('lastUpdated').textContent = `Aktualizováno ${formatTime(new Date().toISOString())}`; } hasLoadedOnce = true; }
   catch { if (!tasks.length) { tasks = loadLocal(); render(); } if (firstLoad) setStatus('Offline — lokální kopie'); hasLoadedOnce = true; }
   finally { isSyncing = false; }
 }
@@ -70,6 +88,8 @@ async function push(change) {
   saveLocal();
   if (!endpoint) return sync();
   if (!change) return;
+  const changeId = change.task?.id || change.id;
+  pendingChanges.set(changeId, change);
   isSaving = true;
   try { setStatus('Ukládám…'); await request('POST', change); setStatus('Synchronizováno', true); $('lastUpdated').textContent = `Aktualizováno ${formatTime(new Date().toISOString())}`; }
   catch { setStatus('Neuloženo — zkus znovu'); }
