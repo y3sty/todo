@@ -96,7 +96,7 @@ async function sync() {
   isSyncing = true;
   const firstLoad = !hasLoadedOnce;
   if (firstLoad) setStatus('Načítám…');
-  try { const data = await request('GET'); if (Array.isArray(data.tasks)) { tasks = mergePendingChanges(data.tasks); saveLocal(); render(); } if (firstLoad) { setStatus('Synchronizováno', true); $('lastUpdated').textContent = `Aktualizováno ${formatTime(new Date().toISOString())}`; } hasLoadedOnce = true; }
+  try { const data = await request('GET'); if (Array.isArray(data.tasks)) { const nextTasks = mergePendingChanges(data.tasks); if (JSON.stringify(nextTasks) !== JSON.stringify(tasks)) { tasks = nextTasks; saveLocal(); render(); } } if (firstLoad) { setStatus('Synchronizováno', true); $('lastUpdated').textContent = `Aktualizováno ${formatTime(new Date().toISOString())}`; } hasLoadedOnce = true; }
   catch { if (!tasks.length) { tasks = loadLocal(); render(); } if (firstLoad) setStatus('Offline — lokální kopie'); hasLoadedOnce = true; }
   finally { isSyncing = false; }
 }
@@ -115,4 +115,4 @@ async function push(change) {
 $('addForm').addEventListener('submit', async (event) => { event.preventDefault(); const input = $('taskInput'); const title = input.value.trim(); if (!title) return; const task = { id: makeId(), title, done: false, createdAt: new Date().toISOString() }; tasks.unshift(task); input.value = ''; render(); await push({ action: 'upsert', task }); });
 $('taskList').addEventListener('click', async (event) => { const action = event.target.dataset.action; if (!action) return; const row = event.target.closest('.task-row'); const index = tasks.findIndex((task) => task.id === row.dataset.id); if (index < 0) return; if (action === 'toggle') { tasks[index].done = !tasks[index].done; render(); await push({ action: 'upsert', task: tasks[index] }); } if (action === 'delete') { const id = tasks[index].id; tasks.splice(index, 1); render(); await push({ action: 'delete', id }); } });
 render(); sync();
-setInterval(sync, 2000);
+setInterval(sync, 5000);
