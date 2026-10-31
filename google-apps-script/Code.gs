@@ -30,8 +30,8 @@ function doPost(e) {
       if (index === -1) tasks.unshift(task); else tasks[index] = task;
     } else if (payload.action === 'delete' && payload.id) {
       tasks = tasks.filter(task => task.id !== String(payload.id));
-    } else if (Array.isArray(payload.tasks)) {
-      tasks = payload.tasks;
+    } else {
+      return json_({ ok: false, error: 'Neplatná synchronizační operace' });
     }
     writeTasks_(sheet, tasks);
   } finally {
