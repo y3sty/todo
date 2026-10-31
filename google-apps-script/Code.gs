@@ -7,37 +7,39 @@ function setup() {
 
 function doGet(e) {
   setup();
-  const tasks = readTasks_(getSheet_());
-  const result = JSON.stringify({ tasks });
-  const callback = e && e.parameter && e.parameter.callback;
-  if (callback && /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(callback)) {
-    return ContentService.createTextOutput(`${callback}(${result})`).setMimeType(ContentService.MimeType.JAVASCRIPT);
+  if (e && e.parameter && e.parameter.action) {
+    return respond_(e, applyChange_(e.parameter));
   }
-  return json_({ tasks });
+  const tasks = readTasks_(getSheet_());
+  return respond_(e, { tasks });
 }
 
 function doPost(e) {
   setup();
   const payload = JSON.parse(e.postData.contents || '{}');
+  return json_(applyChange_(payload));
+}
+
+function applyChange_(payload) {
   const sheet = getSheet_();
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
   try {
     let tasks = readTasks_(sheet);
-    if (payload.action === 'upsert' && payload.task) {
-      const index = tasks.findIndex(task => task.id === String(payload.task.id));
-      const task = { id: String(payload.task.id), title: String(payload.task.title), done: Boolean(payload.task.done), createdAt: String(payload.task.createdAt) };
+    if (payload.action === 'upsert' && payload.id) {
+      const index = tasks.findIndex(task => task.id === String(payload.id));
+      const task = { id: String(payload.id), title: String(payload.title || ''), done: String(payload.done).toLowerCase() === 'true', createdAt: String(payload.createdAt || '') };
       if (index === -1) tasks.unshift(task); else tasks[index] = task;
     } else if (payload.action === 'delete' && payload.id) {
       tasks = tasks.filter(task => task.id !== String(payload.id));
-    } else {
-      return json_({ ok: false, error: 'Neplatná synchronizační operace' });
+    } else if (payload.action) {
+      return { ok: false, error: 'Neplatná synchronizační operace' };
     }
     writeTasks_(sheet, tasks);
   } finally {
     lock.releaseLock();
   }
-  return json_({ ok: true });
+  return { ok: true };
 }
 
 function readTasks_(sheet) {
@@ -53,3 +55,9 @@ function writeTasks_(sheet, tasks) {
 
 function getSheet_() { return SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME) || SpreadsheetApp.getActiveSpreadsheet().insertSheet(SHEET_NAME); }
 function json_(value) { return ContentService.createTextOutput(JSON.stringify(value)).setMimeType(ContentService.MimeType.JSON); }
+function respond_(e, value) {
+  const callback = e && e.parameter && e.parameter.callback;
+  const result = JSON.stringify(value);
+  if (callback && /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(callback)) return ContentService.createTextOutput(`${callback}(${result})`).setMimeType(ContentService.MimeType.JAVASCRIPT);
+  return json_(value);
+}
