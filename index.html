@@ -14,7 +14,6 @@
     <main class="shell">
       <section class="hero">
         <div class="brand"><span class="brand-mark">✓</span><span>daily list</span></div>
-        <button class="icon-button" id="settingsButton" aria-label="Nastavení">⚙</button>
         <p class="eyebrow" id="todayLabel"></p>
         <h1>Udělej si prostor<br /><em>pro důležité.</em></h1>
         <p class="subtitle">Malé kroky. Čistá hlava. Jeden úkol za druhým.</p>
@@ -40,16 +39,6 @@
       <footer><span>Vše na jednom místě.</span><span class="footer-dot">•</span><span id="lastUpdated">Lokálně v prohlížeči</span></footer>
     </main>
 
-    <dialog id="settingsDialog">
-      <form method="dialog" class="dialog-card" id="settingsForm">
-        <button class="dialog-close" value="cancel" aria-label="Zavřít">×</button>
-        <p class="eyebrow">Propojení</p><h2>Google Tabulky</h2>
-        <p class="dialog-copy">Vlož URL nasazeného Google Apps Scriptu. Bez URL aplikace používá demo režim v tomto prohlížeči.</p>
-        <label for="endpointInput">Web App URL</label>
-        <input id="endpointInput" type="url" placeholder="https://script.google.com/macros/s/…/exec" />
-        <div class="dialog-actions"><button value="cancel" class="secondary-button">Zrušit</button><button value="default" class="add-button">Uložit a načíst</button></div>
-      </form>
-    </dialog>
-    <script src="app.js?v=3"></script>
+    <script src="app.js?v=4"></script>
   </body>
 </html>
